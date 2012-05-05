@@ -1,6 +1,7 @@
 package good.intentions.proxy;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 
 /**
@@ -13,6 +14,9 @@ public class DevAppInitiator extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
         
+        Intent intent = new Intent();
+        intent.setClassName("good.intentions.test", "DevAppBouncerImpl");
         
+        GIProxy.safeStartActivity(this, intent);
     }
 }
