@@ -14,9 +14,10 @@ import java.security.SecureRandom;
  */
 public abstract class Bouncer extends BroadcastReceiver{
 	
+	private final String OUR_PACKAGE_NAME = "good.intentions.proxy";
+	
 	private int authenticationStatus = 0; //the last completed stage of authentication
 	private SecureRandom rng = new SecureRandom();
-	private String ourPackageName = "good.intentions.proxy";
 	private byte[] key; //This may need to become an associative array or something.
 	protected String[] trustedPackages; //the dev should override this. 
 				//Each element should be of the form "com.example.package"
@@ -28,8 +29,8 @@ public abstract class Bouncer extends BroadcastReceiver{
 		
 		switch (authenticationStatus){
 			case 0: //the initial request
-				String packageName = intent.getStringExtra(ourPackageName + ".packageName");
-				String className = intent.getStringExtra(ourPackageName + ".className"); //This should refer to the Solicitor
+				String packageName = intent.getStringExtra(OUR_PACKAGE_NAME + ".packageName");
+				String className = intent.getStringExtra(OUR_PACKAGE_NAME + ".className"); //This should refer to the Solicitor
 				if (checkOrigin(packageName)) {
 					Log.v("Bouncer","Origin ok");
 					sendKey(packageName, className, context);
@@ -59,7 +60,7 @@ public abstract class Bouncer extends BroadcastReceiver{
 		i.setClassName(packageName, className);
 		key = genKey();
 		Log.v("Bouncer", "Sending key " + key + " to "+packageName+", "+className);
-		i.putExtra(ourPackageName+".key", key);
+		i.putExtra(OUR_PACKAGE_NAME+".key", key);
 		context.sendBroadcast(i);
 	}
 }
