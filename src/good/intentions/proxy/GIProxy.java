@@ -14,7 +14,7 @@ public class GIProxy {
 		
 		Solicitor solicitor = new Solicitor();
 		
-		IntentFilter filter = new IntentFilter("GIProxy.AUTH");
+		IntentFilter filter = new IntentFilter();
 		
 		context.registerReceiver(solicitor, filter);
 		
