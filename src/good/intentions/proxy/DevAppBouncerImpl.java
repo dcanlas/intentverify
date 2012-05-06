@@ -2,11 +2,17 @@ package good.intentions.proxy;
 
 import android.content.Context;
 import android.content.Intent;
+import android.util.Log;
 
 /**
  *	Developer's implementation of Bouncer.
  */
 public class DevAppBouncerImpl extends Bouncer {
+	
+	public void onReceive(Context context, Intent intent) {
+		
+		Log.v("Bouncer", "Bouncer got something!");
+	}
 
 	@Override
 	public void onAuthentication(Context context) {
@@ -14,7 +20,7 @@ public class DevAppBouncerImpl extends Bouncer {
 		/* Start test responder activity */
 		Intent myIntent = new Intent();
     	myIntent.setClassName("good.intentions.proxy", "DevAppResponderActivity");
-    	context.sendBroadcast(myIntent);
+    	context.startActivity(myIntent);
 	}
 
 	@Override

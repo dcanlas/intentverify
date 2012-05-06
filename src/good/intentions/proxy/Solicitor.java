@@ -44,13 +44,14 @@ public class Solicitor extends BroadcastReceiver{
 		
 		actualIntent = intent;
 		authenticationStarted = true;
+		
 		Intent negotiationIntent = new Intent(intent);
 		negotiationIntent.putExtra(OUR_PACKAGE_NAME + ".packageName", context.getPackageName());
 		negotiationIntent.putExtra(OUR_PACKAGE_NAME + ".className", context.getClass().getName());
-		destinationComponent = actualIntent.getComponent();
-		String bouncerClassName = destinationComponent.getClassName().replaceFirst("\\.[^\\.]*$", ".MyBouncer");
-		bouncerComponent = new ComponentName(destinationComponent.getPackageName(), bouncerClassName);
-		negotiationIntent.setComponent(bouncerComponent);
+//		destinationComponent = actualIntent.getComponent();
+//		String bouncerClassName = destinationComponent.getClassName().replaceFirst("\\.[^\\.]*$", ".MyBouncer");
+//		bouncerComponent = new ComponentName(destinationComponent.getPackageName(), bouncerClassName);
+//		negotiationIntent.setComponent(bouncerComponent);
 
 		context.sendBroadcast(negotiationIntent);
 		

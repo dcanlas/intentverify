@@ -34,6 +34,8 @@ public abstract class Bouncer extends BroadcastReceiver{
 	@Override
 	public void onReceive(Context context, Intent intent) {
 		
+		Log.v("Bouncer", "Bouncer got something!");
+		
 		synchronized (initializeMonitor) {
 			if (!initialized){
 				setTrustedPackages();
