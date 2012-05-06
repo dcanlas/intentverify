@@ -5,7 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ComponentName;
 import android.util.Log;
-
+ 
 /**
  *	Initiates the request to authenticate.
  */
