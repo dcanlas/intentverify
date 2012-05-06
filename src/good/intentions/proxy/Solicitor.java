@@ -16,7 +16,7 @@ public class Solicitor extends BroadcastReceiver{
 	private int authenticationStatus = 0; //the last completed stage of authentication
 	private Intent actualIntent = null;
 	private final Object authMonitor = new Object();
-	
+
 	@Override
 	public void onReceive(Context context, Intent intent) {
 		
@@ -26,8 +26,12 @@ public class Solicitor extends BroadcastReceiver{
 				break;
 				
 			case 1:
+                byte[] key = intent.getByteArrayExtra(OUR_PACKAGE_NAME+".key");
 				//now we send the real intent to bouncer to be sent to actual recipient
-                context.startActivity(actualIntent);
+                actualIntent.putExtra(OUR_PACKAGE_NAME + ".packageName", context.getPackageName());
+                actualIntent.putExtra(OUR_PACKAGE_NAME + ".className", context.getClass().getName());
+                actualIntent.putExtra(OUR_PACKAGE_NAME+".key", key);
+                context.sendBroadcast(actualIntent);
                 
                 synchronized (authMonitor){
                 	authMonitor.notify();

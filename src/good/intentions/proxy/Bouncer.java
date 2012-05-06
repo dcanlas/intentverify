@@ -58,7 +58,10 @@ public abstract class Bouncer extends BroadcastReceiver{
 				break;
 				
 			case 1: //receives the original intent. now forward it.
-				context.startActivity(intent); //is this enough? ask
+				byte[] receivedKey = intent.getByteArrayExtra(OUR_PACKAGE_NAME+".key");
+                if (receivedKey == key) {
+				    context.startActivity(intent);
+                }
 				break;
 			
 		}
