@@ -13,32 +13,25 @@ public class Solicitor extends BroadcastReceiver{
 	private final String OUR_PACKAGE_NAME = "good.intentions.proxy";
 	private final int TIMEOUT = 10000;
 	
-	private int authenticationStatus = 0; //the last completed stage of authentication
+	private volatile boolean authenticationStarted = false; //the last completed stage of authentication
 	private Intent actualIntent = null;
 	private final Object authMonitor = new Object();
 
 	@Override
 	public void onReceive(Context context, Intent intent) {
 		
-		switch (authenticationStatus){
-			case 0:
-				//not needed?
-				break;
-				
-			case 1:
-                byte[] key = intent.getByteArrayExtra(OUR_PACKAGE_NAME+".key");
-				//now we send the real intent to bouncer to be sent to actual recipient
-                actualIntent.putExtra(OUR_PACKAGE_NAME + ".packageName", context.getPackageName());
-                actualIntent.putExtra(OUR_PACKAGE_NAME + ".className", context.getClass().getName());
-                actualIntent.putExtra(OUR_PACKAGE_NAME+".key", key);
-                context.sendBroadcast(actualIntent);
-                
-                synchronized (authMonitor){
-                	authMonitor.notify();
-                }
-                
-				break;
-				
+		if (authenticationStarted){
+			
+			byte[] key = intent.getByteArrayExtra(OUR_PACKAGE_NAME+".key");
+			//now we send the real intent to bouncer to be sent to actual recipient
+            actualIntent.putExtra(OUR_PACKAGE_NAME + ".packageName", context.getPackageName());
+            actualIntent.putExtra(OUR_PACKAGE_NAME + ".className", context.getClass().getName());
+            actualIntent.putExtra(OUR_PACKAGE_NAME+".key", key);
+            context.sendBroadcast(actualIntent);
+            
+            synchronized (authMonitor){
+            	authMonitor.notify();
+            }
 		}
 		
 	}
@@ -47,7 +40,7 @@ public class Solicitor extends BroadcastReceiver{
 	public void authenticate(Context context, Intent intent){
 		
 		actualIntent = intent;
-		authenticationStatus = 1;
+		authenticationStarted = true;
 		
 		Intent negotiationIntent = new Intent(intent);
 		negotiationIntent.putExtra(OUR_PACKAGE_NAME + ".packageName", context.getPackageName());
