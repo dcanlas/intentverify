@@ -19,11 +19,12 @@
             </intent-filter>
         </activity>
         <activity 
-            android:name="DevAppResponderActivity" exported="false">
+            android:name=".DevAppResponderActivity" exported="false">
         </activity>
-        <service android:name="DevAppSolicitorImpl" exported="true">
+        <service android:name=".DevAppSolicitorImpl" exported="true">
         </service>
-        <service android:name="DevAppBouncerImpl" exported="true"></service>
+        <service android:name=".DevAppBouncerImpl" exported="true">
+        </service>
     </application>
 
 </manifest>

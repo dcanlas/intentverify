@@ -15,7 +15,7 @@ import java.security.SecureRandom;
  *	Answers authentication requests.
  *	Must be abstract, since the developer needs to specify what to do when authentication succeeds (onAuthentication()).
  */
-public abstract class Bouncer extends Service{
+public abstract class Bouncer extends Service {
 	
 	private final String OUR_PACKAGE_NAME = "good.intentions.proxy";
 	
@@ -24,7 +24,7 @@ public abstract class Bouncer extends Service{
 	private Object initializeMonitor = new Object();
 	private SecureRandom rng = new SecureRandom();
 	private byte[] key; //This may need to become an associative array or something.
-	protected ArrayList<String> trustedPackages = null; //the dev should override this. 
+	protected ArrayList<String> trustedPackages = new ArrayList<String>(); //the dev should override this. 
 				//Each element should be of the form "com.example.package"
 	protected String destination = null;
 	private Messenger mService = null;
@@ -38,11 +38,11 @@ public abstract class Bouncer extends Service{
     public IBinder onBind(Intent intent) {return mMessenger.getBinder();}
    
      //Step 1.5: Authenticate package, bind to Solicitor
-    public void onStart(Intent intent) {
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
     	synchronized (initializeMonitor) {
 				if (!initialized){
 					setTrustedPackages();
-					//setDestination();
 					initialized = true;
 				}
 				
@@ -58,6 +58,8 @@ public abstract class Bouncer extends Service{
 		else {
 			Log.v("Bouncer", "Origin rejected");
 		}
+		
+		return START_NOT_STICKY;
     }
     
     private ServiceConnection mConnection = new ServiceConnection() {

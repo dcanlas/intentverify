@@ -51,10 +51,12 @@ public abstract class Solicitor extends Service {
 		//authenticationStarted = true;
 		
 		negotiationIntent = new Intent(intent);
-		negotiationIntent.putExtra(OUR_PACKAGE_NAME + ".packageName", context.getPackageName());		
+		negotiationIntent.putExtra(OUR_PACKAGE_NAME + ".packageName", context.getPackageName());
+		
 		String ClassName = context.getClass().getName();
 		String SolicitorClassName = ClassName.replaceFirst("\\.[^\\.]*$", ".DevAppSolicitorImpl");
 		negotiationIntent.putExtra(OUR_PACKAGE_NAME + ".className", SolicitorClassName);
+		
 		destinationComponent = actualIntent.getComponent();
 		String bouncerClassName = destinationComponent.getClassName().replaceFirst("\\.[^\\.]*$", ".DevAppBouncerImpl");
 		bouncerComponent = new ComponentName(destinationComponent.getPackageName(), bouncerClassName);
