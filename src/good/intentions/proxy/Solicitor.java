@@ -1,15 +1,18 @@
 package good.intentions.proxy;
 
+import android.app.Service;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ComponentName;
+import android.content.ServiceConnection;
 import android.util.Log;
+import android.os.*;
  
 /**
  *	Initiates the request to authenticate.
  */
-public class Solicitor extends BroadcastReceiver{
+public abstract class Solicitor extends Service {
 	
 	private final String OUR_PACKAGE_NAME = "good.intentions.proxy";
 	private final int TIMEOUT = 10000;
@@ -19,42 +22,89 @@ public class Solicitor extends BroadcastReceiver{
 	private ComponentName destinationComponent = null;
 	private ComponentName bouncerComponent = null;
 	private final Object authMonitor = new Object();
-
-	@Override
-	public void onReceive(Context context, Intent intent) {
-		
-		if (authenticationStarted){
-			
-			byte[] key = intent.getByteArrayExtra(OUR_PACKAGE_NAME+".key");
-			//now we send the real intent to bouncer to be sent to actual recipient
-            actualIntent.putExtra(OUR_PACKAGE_NAME + ".packageName", context.getPackageName());
-            actualIntent.putExtra(OUR_PACKAGE_NAME + ".className", context.getClass().getName());
-            actualIntent.putExtra(OUR_PACKAGE_NAME+".key", key);
-            context.sendBroadcast(actualIntent);
-            
-            synchronized (authMonitor){
-            	authMonitor.notify();
-            }
-		}
-		
-	}
-
-    //asks to be authenticated by Bouncer
+	private Messenger mService = null;
+	private boolean mBound = false;
+	private Intent negotiationIntent = null;
+	
+	//defines behavior for initial binding
+//	private ServiceConnection mConnection = new ServiceConnection() {
+//        public void onServiceConnected(ComponentName className, IBinder service) {
+//            mService = new Messenger(service);
+//            mBound = true;
+//            Message msg = Message.obtain();
+//            Bundle bundle = new Bundle();
+//            bundle.putString(OUR_PACKAGE_NAME + ".packageName", Context.getApplicationContext().getPackageName());
+//            msg.setData(bundle);
+//            msg.replyTo = mService;
+//            mService.send(msg);
+//        }
+//        public void onServiceDisconnected(ComponentName className) {
+//            mService = null;
+//            mBound = false;
+//        }
+//    };
+	
+    //Step 1: asks to be authenticated by Bouncer
 	public void authenticate(Context context, Intent intent){
 		
 		actualIntent = intent;
-		authenticationStarted = true;
+		//authenticationStarted = true;
 		
-		Intent negotiationIntent = new Intent(intent);
-		negotiationIntent.putExtra(OUR_PACKAGE_NAME + ".packageName", context.getPackageName());
-		negotiationIntent.putExtra(OUR_PACKAGE_NAME + ".className", context.getClass().getName());
-//		destinationComponent = actualIntent.getComponent();
-//		String bouncerClassName = destinationComponent.getClassName().replaceFirst("\\.[^\\.]*$", ".MyBouncer");
-//		bouncerComponent = new ComponentName(destinationComponent.getPackageName(), bouncerClassName);
-//		negotiationIntent.setComponent(bouncerComponent);
+		negotiationIntent = new Intent(intent);
+		negotiationIntent.putExtra(OUR_PACKAGE_NAME + ".packageName", context.getPackageName());		
+		String ClassName = context.getClass().getName();
+		String SolicitorClassName = ClassName.replaceFirst("\\.[^\\.]*$", ".DevAppSolicitorImpl");
+		negotiationIntent.putExtra(OUR_PACKAGE_NAME + ".className", SolicitorClassName);
+		destinationComponent = actualIntent.getComponent();
+		String bouncerClassName = destinationComponent.getClassName().replaceFirst("\\.[^\\.]*$", ".DevAppBouncerImpl");
+		bouncerComponent = new ComponentName(destinationComponent.getPackageName(), bouncerClassName);
+		negotiationIntent.setComponent(bouncerComponent);
+		
+		context.startService(negotiationIntent);
+	}
+	
+	//Step 3: send msg with key and original intent.
+	class IncomingHandler extends Handler {
+		@Override
+		public void handleMessage(Message msg) {	
+			byte[] key = msg.getData().getByteArray(OUR_PACKAGE_NAME+".key");
+			if (key == null) {return;}
+			Message msg2 = Message.obtain();
+            Bundle bundle = new Bundle();
+            bundle.putByteArray("key", key);
+            bundle.putParcelable("intent", actualIntent);
+            msg2.setData(bundle);
+            try {
+				mService.send(msg2);
+			} catch (RemoteException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}	
+	}
+	
+	final Messenger mMessenger = new Messenger(new IncomingHandler());		
+	
+	public IBinder onBind(Intent intent) {
+		return mMessenger.getBinder();
+	}
+	
 
-		context.sendBroadcast(negotiationIntent);
 		
+//		if (authenticationStarted){	
+//			byte[] key = intent.getByteArrayExtra(OUR_PACKAGE_NAME+".key");
+//			//now we send the real intent to bouncer to be sent to actual recipient
+//            actualIntent.putExtra(OUR_PACKAGE_NAME + ".packageName", context.getPackageName());
+//            actualIntent.putExtra(OUR_PACKAGE_NAME + ".className", context.getClass().getName());
+//            actualIntent.putExtra(OUR_PACKAGE_NAME+".key", key);
+//            context.sendBroadcast(actualIntent);
+//            
+//            synchronized (authMonitor){
+//            	authMonitor.notify();
+//            }
+//		}
+		
+	/*	
 		synchronized (authMonitor){
 			try {
 				authMonitor.wait(TIMEOUT);
@@ -65,6 +115,7 @@ public class Solicitor extends BroadcastReceiver{
 		}
 		
 		Log.v("Solicitor", "Authentication sequence finished or timed out");
-	}
+	*/
 
-}
+
+	}

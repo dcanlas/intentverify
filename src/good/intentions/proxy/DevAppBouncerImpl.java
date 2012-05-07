@@ -8,20 +8,15 @@ import android.util.Log;
  *	Developer's implementation of Bouncer.
  */
 public class DevAppBouncerImpl extends Bouncer {
-	
-	public void onReceive(Context context, Intent intent) {
-		
-		Log.v("Bouncer", "Bouncer got something!");
-	}
 
-	@Override
-	public void onAuthentication(Context context) {
-		
-		/* Start test responder activity */
-		Intent myIntent = new Intent();
-    	myIntent.setClassName("good.intentions.proxy", "DevAppResponderActivity");
-    	context.startActivity(myIntent);
-	}
+//	@Override
+//	public void onAuthentication(Context context) {
+//		
+//		/* Start test responder activity */
+//		Intent myIntent = new Intent();
+//    	myIntent.setClassName("good.intentions.proxy", "DevAppResponderActivity");
+//    	context.startActivity(myIntent);
+//	}
 
 	@Override
 	public void setTrustedPackages() {
@@ -29,9 +24,9 @@ public class DevAppBouncerImpl extends Bouncer {
 		trustedPackages.add("good.intentions.test");
 	}
 
-	@Override
-	public void setDestination() {
-		destination = "DevAppResponderActivity";
-	}
+//	@Override
+//	public void setDestination() {
+//		destination = "DevAppResponderActivity";
+//	}
 
 }
