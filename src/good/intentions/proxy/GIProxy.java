@@ -12,12 +12,7 @@ public class GIProxy {
 	
 	public static void safeStartActivity(Context context, Intent intent){
 		
-		Solicitor solicitor = new Solicitor();
-		
-		IntentFilter filter = new IntentFilter();
-		
-		context.registerReceiver(solicitor, filter);
-		
+		Solicitor solicitor = new DevAppSolicitorImpl();
 		solicitor.authenticate(context, intent);
 	}
 }

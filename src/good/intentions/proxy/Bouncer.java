@@ -2,17 +2,20 @@ package good.intentions.proxy;
 
 import java.util.ArrayList;
 
-import android.content.BroadcastReceiver;
+import android.app.Service;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.util.Log;
+import android.os.*;
 
 import java.security.SecureRandom;
 /**
  *	Answers authentication requests.
  *	Must be abstract, since the developer needs to specify what to do when authentication succeeds (onAuthentication()).
  */
-public abstract class Bouncer extends BroadcastReceiver{
+public abstract class Bouncer extends Service{
 	
 	private final String OUR_PACKAGE_NAME = "good.intentions.proxy";
 	
@@ -24,47 +27,70 @@ public abstract class Bouncer extends BroadcastReceiver{
 	protected ArrayList<String> trustedPackages = null; //the dev should override this. 
 				//Each element should be of the form "com.example.package"
 	protected String destination = null;
+	private Messenger mService = null;
+	private boolean mBound = false;
 	
-	abstract public void onAuthentication(Context context);
-	
+	//abstract public void onAuthentication(Context context);
 	abstract public void setTrustedPackages();
+	//abstract public void setDestination();
 	
-	abstract public void setDestination();
-	
-	@Override
-	public void onReceive(Context context, Intent intent) {
-		
-		Log.v("Bouncer", "Bouncer got something!");
-		
-		synchronized (initializeMonitor) {
-			if (!initialized){
-				setTrustedPackages();
-				setDestination();
-				initialized = true;
-			}
-		}
-		
-		if (!authenticationKeySent){
-			//the initial request
-				String packageName = intent.getStringExtra(OUR_PACKAGE_NAME + ".packageName");
-				String className = intent.getStringExtra(OUR_PACKAGE_NAME + ".className"); //This should refer to the Solicitor
-				if (checkOrigin(packageName)) {
-					Log.v("Bouncer","Origin ok");
-					sendKey(packageName, className, context);
-					authenticationKeySent = true;
+	final Messenger mMessenger = new Messenger(new IncomingHandler());    
+    public IBinder onBind(Intent intent) {return mMessenger.getBinder();}
+   
+     //Step 1.5: Authenticate package, bind to Solicitor
+    public void onStart(Intent intent) {
+    	synchronized (initializeMonitor) {
+				if (!initialized){
+					setTrustedPackages();
+					//setDestination();
+					initialized = true;
 				}
-				else {
-					Log.v("Bouncer", "Origin rejected");
-				}
+				
+			}    	
+    	//the initial request
+		String packageName = intent.getStringExtra(OUR_PACKAGE_NAME + ".packageName");
+		String className = intent.getStringExtra(OUR_PACKAGE_NAME + ".className"); //This should refer to the Solicitor
+		if (checkOrigin(packageName)) {
+			Log.v("Bouncer","Origin ok");
+			bind(packageName, className);
+			authenticationKeySent = true;
 		}
 		else {
+			Log.v("Bouncer", "Origin rejected");
+		}
+    }
+    
+    private ServiceConnection mConnection = new ServiceConnection() {
+        //Step 2: Send key
+    	public void onServiceConnected(ComponentName className, IBinder service) {
+            mService = new Messenger(service);
+            mBound = true;
+            sendKey();
+        }
+        public void onServiceDisconnected(ComponentName className) {
+            mService = null;
+            mBound = false;
+        }
+    };
+    //Step 4: Pass on original intent
+	class IncomingHandler extends Handler {
+		
+		@Override
+		public void handleMessage(Message msg) {
+			Log.v("Bouncer", "Bouncer got something!");
 			//receives the original intent. now forward it.
-			byte[] receivedKey = intent.getByteArrayExtra(OUR_PACKAGE_NAME+".key");
-            if (receivedKey == key) {
-			    context.startActivity(intent);
-            }
+			byte[] receivedKey = msg.getData().getByteArray(OUR_PACKAGE_NAME+".key");
+			if (receivedKey == key) { //TODO: support multiple keys
+				Intent intent = msg.getData().getParcelable("intent");
+				startActivity(intent); //TODO: support other actions
+			
+			}
 		}
 	}
+
+	
+
+	
 	
 	private boolean checkOrigin(String packageName) {
 		return trustedPackages.contains(packageName);
@@ -76,12 +102,24 @@ public abstract class Bouncer extends BroadcastReceiver{
 		return bytes;
 	}
 	
-	private void sendKey(String packageName, String className, Context context) {
-		Intent i = new Intent();
-		i.setClassName(packageName, className);
+	private void sendKey() {
 		key = genKey();
-		Log.v("Bouncer", "Sending key " + key + " to "+packageName+", "+className);
-		i.putExtra(OUR_PACKAGE_NAME+".key", key);
-		context.sendBroadcast(i);
+		Log.v("Bouncer", "Sending key " + key);
+		Message msg = Message.obtain();
+        Bundle bundle = new Bundle();
+        bundle.putByteArray(OUR_PACKAGE_NAME + ".key", key);
+        msg.setData(bundle);
+        msg.replyTo = mService;
+        try {
+			mService.send(msg);
+		} catch (RemoteException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	private void bind(String packageName, String className) {
+		Intent intent = new Intent();
+		intent.setClassName(packageName, className);
+		bindService(intent, mConnection, 0);	
 	}
 }

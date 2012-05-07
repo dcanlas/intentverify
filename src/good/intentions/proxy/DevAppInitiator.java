@@ -15,7 +15,7 @@ public class DevAppInitiator extends Activity {
         setContentView(R.layout.main);
         
         Intent intent = new Intent();
-        intent.setClassName("good.intentions.proxy", "good.intentions.proxy.DevAppBouncerImpl");
+        intent.setClassName("good.intentions.proxy", "good.intentions.proxy.DevAppResponderActivity");
         
         GIProxy.safeStartActivity(this, intent);
     }
