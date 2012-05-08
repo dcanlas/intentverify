@@ -12,7 +12,7 @@ import android.os.*;
 /**
  *	Initiates the request to authenticate.
  */
-public abstract class Solicitor extends Service {
+public class Solicitor extends Service {
 	
 	private final String OUR_PACKAGE_NAME = "good.intentions.proxy";
 	private final int TIMEOUT = 10000;
@@ -77,7 +77,7 @@ public abstract class Solicitor extends Service {
             bundle.putParcelable("intent", actualIntent);
             msg2.setData(bundle);
             try {
-				mService.send(msg2);
+				msg.replyTo.send(msg2);
 			} catch (RemoteException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -118,6 +118,11 @@ public abstract class Solicitor extends Service {
 		
 		Log.v("Solicitor", "Authentication sequence finished or timed out");
 	*/
-
-
+	
+	@Override
+	public int onStartCommand(Intent intent, int flags, int startId){
+		return START_STICKY;
 	}
+
+
+}

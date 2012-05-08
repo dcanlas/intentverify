@@ -34,8 +34,9 @@ public abstract class Bouncer extends Service {
 	abstract public void setTrustedPackages();
 	//abstract public void setDestination();
 	
-	final Messenger mMessenger = new Messenger(new IncomingHandler());    
-    public IBinder onBind(Intent intent) {return mMessenger.getBinder();}
+	final Messenger mMessenger = new Messenger(new IncomingHandler());   
+    //public IBinder onBind(Intent intent) {return mMessenger.getBinder();}
+    public IBinder onBind(Intent intent) {return null;}
    
      //Step 1.5: Authenticate package, bind to Solicitor
     @Override
@@ -74,6 +75,7 @@ public abstract class Bouncer extends Service {
             mBound = false;
         }
     };
+    
     //Step 4: Pass on original intent
 	class IncomingHandler extends Handler {
 		
@@ -111,7 +113,7 @@ public abstract class Bouncer extends Service {
         Bundle bundle = new Bundle();
         bundle.putByteArray(OUR_PACKAGE_NAME + ".key", key);
         msg.setData(bundle);
-        msg.replyTo = mService;
+        msg.replyTo = mMessenger;
         try {
 			mService.send(msg);
 		} catch (RemoteException e) {
