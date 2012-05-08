@@ -4,7 +4,6 @@ import java.util.ArrayList;
 
 import android.app.Service;
 import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.util.Log;
@@ -19,7 +18,6 @@ public abstract class Bouncer extends Service {
 	
 	private final String OUR_PACKAGE_NAME = "good.intentions.proxy";
 	
-	private boolean authenticationKeySent = false; //the last completed stage of authentication
 	private boolean initialized = false;
 	private Object initializeMonitor = new Object();
 	private SecureRandom rng = new SecureRandom();
@@ -28,14 +26,10 @@ public abstract class Bouncer extends Service {
 				//Each element should be of the form "com.example.package"
 	protected String destination = null;
 	private Messenger mService = null;
-	private boolean mBound = false;
 	
-	//abstract public void onAuthentication(Context context);
 	abstract public void setTrustedPackages();
-	//abstract public void setDestination();
 	
 	final Messenger mMessenger = new Messenger(new IncomingHandler());   
-    //public IBinder onBind(Intent intent) {return mMessenger.getBinder();}
     public IBinder onBind(Intent intent) {return null;}
    
      //Step 1.5: Authenticate package, bind to Solicitor
@@ -54,7 +48,6 @@ public abstract class Bouncer extends Service {
 		if (checkOrigin(packageName)) {
 			Log.v("Bouncer","Origin ok");
 			bind(packageName, className);
-			authenticationKeySent = true;
 		}
 		else {
 			Log.v("Bouncer", "Origin rejected");
@@ -67,12 +60,10 @@ public abstract class Bouncer extends Service {
         //Step 2: Send key
     	public void onServiceConnected(ComponentName className, IBinder service) {
             mService = new Messenger(service);
-            mBound = true;
             sendKey();
         }
         public void onServiceDisconnected(ComponentName className) {
             mService = null;
-            mBound = false;
         }
     };
     
@@ -83,7 +74,6 @@ public abstract class Bouncer extends Service {
 		public void handleMessage(Message msg) {
 			Log.v("Bouncer", "Bouncer got something!");
 			//receives the original intent. now forward it.
-			Bundle bundle = msg.getData();
 			byte[] receivedKey = msg.getData().getByteArray(OUR_PACKAGE_NAME + ".key");
 			if (receivedKey == key) { //TODO: support multiple keys
 				Intent intent = msg.getData().getParcelable(OUR_PACKAGE_NAME + ".intent");
@@ -92,9 +82,6 @@ public abstract class Bouncer extends Service {
 			}
 		}
 	}
-
-	
-
 	
 	
 	private boolean checkOrigin(String packageName) {

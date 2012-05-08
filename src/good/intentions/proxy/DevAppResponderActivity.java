@@ -17,6 +17,6 @@ public class DevAppResponderActivity extends Activity{
         
         /* Success notification */
         Log.v("DevAppResponderActivity", "HELL'S BELLS!");
-        Toast.makeText(this, "HELL'S BELLS!", 0).show();
+        Toast.makeText(this, "HELL'S BELLS!", Toast.LENGTH_LONG).show();
     }
 }
