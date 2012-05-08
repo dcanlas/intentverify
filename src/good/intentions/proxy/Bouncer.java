@@ -83,9 +83,10 @@ public abstract class Bouncer extends Service {
 		public void handleMessage(Message msg) {
 			Log.v("Bouncer", "Bouncer got something!");
 			//receives the original intent. now forward it.
-			byte[] receivedKey = msg.getData().getByteArray(OUR_PACKAGE_NAME+".key");
+			Bundle bundle = msg.getData();
+			byte[] receivedKey = msg.getData().getByteArray(OUR_PACKAGE_NAME + ".key");
 			if (receivedKey == key) { //TODO: support multiple keys
-				Intent intent = msg.getData().getParcelable("intent");
+				Intent intent = msg.getData().getParcelable(OUR_PACKAGE_NAME + ".intent");
 				startActivity(intent); //TODO: support other actions
 			
 			}

@@ -18,7 +18,7 @@ public class Solicitor extends Service {
 	private final int TIMEOUT = 10000;
 	
 	private volatile boolean authenticationStarted = false; //the last completed stage of authentication
-	private Intent actualIntent = null;
+	private volatile Intent actualIntent = null;
 	private ComponentName destinationComponent = null;
 	private ComponentName bouncerComponent = null;
 	private final Object authMonitor = new Object();
@@ -65,16 +65,22 @@ public class Solicitor extends Service {
 		context.startService(negotiationIntent);
 	}
 	
+	public void setActualIntent(Intent intent){
+		actualIntent = intent;
+	}
+	
 	//Step 3: send msg with key and original intent.
 	class IncomingHandler extends Handler {
 		@Override
 		public void handleMessage(Message msg) {	
 			byte[] key = msg.getData().getByteArray(OUR_PACKAGE_NAME+".key");
-			if (key == null) {return;}
+			if (key == null){
+				return;
+			}
 			Message msg2 = Message.obtain();
             Bundle bundle = new Bundle();
-            bundle.putByteArray("key", key);
-            bundle.putParcelable("intent", actualIntent);
+            bundle.putByteArray(OUR_PACKAGE_NAME + ".key", key);
+            bundle.putParcelable(OUR_PACKAGE_NAME + ".intent", actualIntent);
             msg2.setData(bundle);
             try {
 				msg.replyTo.send(msg2);
@@ -121,6 +127,7 @@ public class Solicitor extends Service {
 	
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId){
+		actualIntent = intent.getParcelableExtra("actualIntent");
 		return START_STICKY;
 	}
 
