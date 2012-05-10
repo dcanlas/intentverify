@@ -14,6 +14,9 @@ public class DevAppInitiator extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
         
+        Intent test = new Intent(this, DevAppBouncerImpl.class);
+        startService(test);
+        
         Intent intent = new Intent();
         intent.setClassName("good.intentions.proxy", "good.intentions.proxy.DevAppResponderActivity");
         

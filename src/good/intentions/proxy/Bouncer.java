@@ -20,6 +20,7 @@ public abstract class Bouncer extends Service {
 	
 	private boolean initialized = false;
 	private Object initializeMonitor = new Object();
+	private volatile int serviceCounter = 0; //current number of authentication requests being processed by this service
 	private SecureRandom rng = new SecureRandom();
 	private byte[] key; //This may need to become an associative array or something.
 	protected ArrayList<String> trustedPackages = new ArrayList<String>(); //the dev should override this. 
@@ -29,35 +30,42 @@ public abstract class Bouncer extends Service {
 	
 	abstract public void setTrustedPackages();
 	
-	final Messenger mMessenger = new Messenger(new IncomingHandler());   
-    public IBinder onBind(Intent intent) {return null;}
+	final Messenger mMessenger = new Messenger(new IncomingHandler());
+	
+    public IBinder onBind(Intent intent) {
+    	if (intent.getAction().equals("good.intentions.proxy.AUTH")){
+    		return mMessenger.getBinder();
+    	}
+    	else {
+    		return null;
+    	}
+    }
    
-     //Step 1.5: Authenticate package, bind to Solicitor
+     //Step 2.0: Authenticate package, bind to Solicitor
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
     	synchronized (initializeMonitor) {
-				if (!initialized){
-					setTrustedPackages();
-					initialized = true;
-				}
-				
-			}    	
-    	//the initial request
-		String packageName = intent.getStringExtra(OUR_PACKAGE_NAME + ".packageName");
-		String className = intent.getStringExtra(OUR_PACKAGE_NAME + ".className"); //This should refer to the Solicitor
-		if (checkOrigin(packageName)) {
-			Log.v("Bouncer","Origin ok");
-			bind(packageName, className);
-		}
-		else {
-			Log.v("Bouncer", "Origin rejected");
-		}
+			if (!initialized){
+				setTrustedPackages();
+				initialized = true;
+			}
+		}    	
+//    	//the initial request
+//		String packageName = intent.getStringExtra(OUR_PACKAGE_NAME + ".packageName");
+//		String className = intent.getStringExtra(OUR_PACKAGE_NAME + ".className"); //This should refer to the Solicitor
+//		if (checkOrigin(packageName)) {
+//			Log.v("Bouncer","Origin ok");
+//			bind(packageName, className);
+//		}
+//		else {
+//			Log.v("Bouncer", "Origin rejected");
+//		}
 		
 		return START_NOT_STICKY;
     }
     
     private ServiceConnection mConnection = new ServiceConnection() {
-        //Step 2: Send key
+        //Step 2.5: Send key
     	public void onServiceConnected(ComponentName className, IBinder service) {
             mService = new Messenger(service);
             sendKey();
@@ -73,16 +81,40 @@ public abstract class Bouncer extends Service {
 		@Override
 		public void handleMessage(Message msg) {
 			Log.v("Bouncer", "Bouncer got something!");
-			//receives the original intent. now forward it.
-			byte[] receivedKey = msg.getData().getByteArray(OUR_PACKAGE_NAME + ".key");
-			if (receivedKey == key) { //TODO: support multiple keys
-				Intent intent = msg.getData().getParcelable(OUR_PACKAGE_NAME + ".intent");
-				startActivity(intent); //TODO: support other actions
-			
+			Bundle msgBundle = msg.getData();
+			switch (msg.what){
+				case 1:
+					//begin authentication
+					synchronized (initializeMonitor){
+						serviceCounter += 1;
+					}
+					String packageName = msgBundle.getString(OUR_PACKAGE_NAME + ".packageName");
+					String className = msgBundle.getString(OUR_PACKAGE_NAME + ".className"); //This should refer to the Solicitor
+					if (checkOrigin(packageName)) {
+						Log.v("Bouncer","Origin ok");
+						bind(packageName, className);
+					}
+					else {
+						Log.v("Bouncer", "Origin rejected");
+					}
+					break;
+				case 3:
+					//execute original intent
+					byte[] receivedKey = msgBundle.getByteArray(OUR_PACKAGE_NAME + ".key");
+					if (receivedKey == key) { //TODO: support multiple keys
+						Intent intent = msgBundle.getParcelable(OUR_PACKAGE_NAME + ".intent");
+						startActivity(intent); //TODO: support other actions
+					}
+					synchronized (initializeMonitor){
+						serviceCounter -= 1;
+					}
+					if (serviceCounter <= 0){
+						stopSelf();
+					}
+					break;
 			}
 		}
 	}
-	
 	
 	private boolean checkOrigin(String packageName) {
 		return trustedPackages.contains(packageName);
@@ -102,6 +134,7 @@ public abstract class Bouncer extends Service {
         bundle.putByteArray(OUR_PACKAGE_NAME + ".key", key);
         msg.setData(bundle);
         msg.replyTo = mMessenger;
+        msg.what = 2;
         try {
 			mService.send(msg);
 		} catch (RemoteException e) {
