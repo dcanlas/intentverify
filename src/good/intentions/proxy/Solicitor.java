@@ -49,6 +49,7 @@ public abstract class Solicitor extends Service {
     		authRequest.setData(packageNameBundle);
     		try {
 				mService.send(authRequest);
+				unbindService(mConnection);
 			} catch (RemoteException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

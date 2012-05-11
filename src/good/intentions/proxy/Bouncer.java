@@ -105,6 +105,8 @@ public abstract class Bouncer extends Service {
 						Intent intent = msgBundle.getParcelable(OUR_PACKAGE_NAME + ".intent");
 						startActivity(intent); //TODO: support other actions
 					}
+					
+					//service cleanup
 					synchronized (initializeMonitor){
 						serviceCounter -= 1;
 					}
