@@ -103,7 +103,17 @@ public abstract class Bouncer extends Service {
 					byte[] receivedKey = msgBundle.getByteArray(OUR_PACKAGE_NAME + ".key");
 					if (receivedKey == key) { //TODO: support multiple keys
 						Intent intent = msgBundle.getParcelable(OUR_PACKAGE_NAME + ".intent");
-						startActivity(intent); //TODO: support other actions
+						
+						String targetComponentType = msgBundle.getString(OUR_PACKAGE_NAME + ".targetType");
+						if (targetComponentType.equals("ACTIVITY")){
+							startActivity(intent);
+						}
+						else if (targetComponentType.equals("SERVICE")){
+							startService(intent);
+						}
+						else if (targetComponentType.equals("BROADCASTRECEIVER")){
+							sendBroadcast(intent);
+						}
 					}
 					
 					//service cleanup

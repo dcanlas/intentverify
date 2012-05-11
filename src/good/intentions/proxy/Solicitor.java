@@ -17,6 +17,7 @@ public abstract class Solicitor extends Service {
 	private volatile Intent actualIntent = null;
 	private volatile String packageNameExtra = "";
 	private volatile String classNameExtra = "";
+	private volatile String targetTypeExtra = "";
 	
 	private Messenger mService = null;
 	
@@ -28,6 +29,7 @@ public abstract class Solicitor extends Service {
 		
 		packageNameExtra = intent.getStringExtra(OUR_PACKAGE_NAME + ".packageName");
 		classNameExtra = intent.getStringExtra(OUR_PACKAGE_NAME + ".className");
+		targetTypeExtra = intent.getStringExtra(OUR_PACKAGE_NAME + ".targetType");
 		
 		Intent bouncerBindIntent = new Intent();
 		bouncerBindIntent.setClassName(OUR_PACKAGE_NAME, OUR_PACKAGE_NAME + ".DevAppBouncerImpl");
@@ -74,6 +76,7 @@ public abstract class Solicitor extends Service {
 		            Bundle bundle = new Bundle();
 		            bundle.putByteArray(OUR_PACKAGE_NAME + ".key", key);
 		            bundle.putParcelable(OUR_PACKAGE_NAME + ".intent", actualIntent);
+		    		bundle.putString(OUR_PACKAGE_NAME + ".targetType", targetTypeExtra);
 		            replyMsg.setData(bundle);
 		            replyMsg.what = 3;
 		            try {
